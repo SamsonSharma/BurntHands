@@ -12,18 +12,22 @@
   int lightrelaypin = 9;
   
   //CHANGE THESE
-  int candyNumber = 3;
+  int candyNumber = 4;
   int allowedTake = 1;
 
   //DON'T CHANGE THESE
+  //unsigned long curTime;
+  //unsigned long waitTime = 5000;
   int startWeight;
   float currentWeight;
   int calcWeight;
+  int lastCandyNum;
   float curCandy;
   float singularWeight;
   int weigh = 0;
   int buttonState2 = 0;
   float calibration_factor = -466; 
+  bool cooldown = true;
 
 void setup() {
   Serial.begin(9600);
@@ -44,7 +48,7 @@ void setup() {
 
 void loop() 
 {
-
+  //curTime = millis();
     
   if(buttonState2 != digitalRead(2))
   {
@@ -55,21 +59,13 @@ void loop()
     {
       digitalWrite(LED, HIGH);
       getWeight();
-      curCandy = (currentWeight / singularWeight) + 0.5;
-      Serial.println(int(curCandy));
+      handleCandy();
+//      if(candyNumber - curCandy > allowedTake)
+//      {
+//       handleCandy();
+//      }
+      //Serial.println(int(curCandy));
       //delay(1000);
-      
-      if(candyNumber - curCandy > allowedTake)
-      {
-       Serial.println("GAS");
-       delay(1000);
-       //calcWeight = currentWeight;
-//       Serial.println(singularWeight);
-//       Serial.println(startWeight);
-//       Serial.println(currentWeight);
-
-      }
-  
      }
 
    }
@@ -77,7 +73,27 @@ void loop()
 }
 
    
-  
+void handleCandy()
+  {
+    curCandy = (currentWeight / singularWeight) + 0.5;
+    //Serial.println(int(curCandy));
+    //Serial.println(candyNumber - int(curCandy));
+    
+    if(candyNumber - int(curCandy) > allowedTake)
+      {
+
+       //if(curTime < waitTime)
+       Serial.println("GAS");
+       allowedTake += 2;
+       //Serial.println(curCandy);
+       //Serial.println(candyNumber - int(curCandy));
+       //Serial.println("GAS2FAST");
+       //Serial.println(waitTime);
+       Serial.println(allowedTake);
+      }
+     
+      
+  }  
 
 void getWeight() 
   {
@@ -85,6 +101,7 @@ void getWeight()
     if(weigh < 1)
       {
       Serial.println("wrk");
+      lastCandyNum = curCandy;
       startWeight = scale.get_units();
       calcWeight = startWeight;
       singularWeight = scale.get_units() / candyNumber;
@@ -93,11 +110,11 @@ void getWeight()
       Serial.println(currentWeight);
       weigh++;
       }
-//
-//      if(currentWeight / candyNumber > singularWeight)
-//      {
-//        //Serial.println("putback");
-//        //calcWeight = startWeight;
-//        //rWeight = scale.get_units() / candyNumber;
-//        }
+
+      if(currentWeight / candyNumber > singularWeight)
+      {
+        //Serial.println("putback");
+        //calcWeight = startWeight;
+        //rWeight = scale.get_units() / candyNumber;
+        }
   }
