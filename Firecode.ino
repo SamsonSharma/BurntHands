@@ -10,6 +10,8 @@
 
   int gasrelaypin = 8;
   int lightrelaypin = 9;
+  const int pingPin = 12; // Trigger Pin of Ultrasonic Sensor
+  const int echoPin = 13; // Echo Pin of Ultrasonic Sensor
   
   //CHANGE THESE
   int candyNumber = 4;
@@ -26,7 +28,7 @@
   float singularWeight;
   int weigh = 0;
   int buttonState2 = 0;
-  float calibration_factor = -466; 
+  float calibration_factor = -10000; 
   bool cooldown = true;
 
 void setup() {
@@ -41,13 +43,23 @@ void setup() {
   long zero_factor = scale.read_average(); //Get a baseline reading
   scale.set_scale(calibration_factor);
   //one reading without any weight to check zero
-  scale.get_units() + 0.5;
+  scale.get_units();
 
 }
 
 
 void loop() 
 {
+  long duration, cm;
+  pinMode(pingPin, OUTPUT);
+  digitalWrite(pingPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(pingPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(pingPin, LOW);
+  pinMode(echoPin, INPUT);
+  duration = pulseIn(echoPin, HIGH);
+  cm = microsecondsToCentimeters(duration);
   //curTime = millis();
     
   if(buttonState2 != digitalRead(2))
@@ -57,13 +69,19 @@ void loop()
 
      if(buttonState2  = 2)
     {
+       
+       
       digitalWrite(LED, HIGH);
       getWeight();
-      handleCandy();
-//      if(candyNumber - curCandy > allowedTake)
-//      {
-//       handleCandy();
-//      }
+      curCandy = (currentWeight / singularWeight) + 0.5;
+      if(cm != 21 && int(curCandy + 0.5) < (int(candyNumber) - 1))
+      {
+       //handleCandy();
+       fireball();
+       //Serial.println(currentWeight);
+       //Serial.println(curCandy);
+       //Serial.println(candyNumber - 1);
+      }
       //Serial.println(int(curCandy));
       //delay(1000);
      }
@@ -72,32 +90,22 @@ void loop()
 
 }
 
+long microsecondsToCentimeters(long microseconds) {
+   return microseconds / 29 / 2;
+}
+
    
 void handleCandy()
   {
     curCandy = (currentWeight / singularWeight) + 0.5;
-    //Serial.println(int(curCandy));
-    //Serial.println(candyNumber - int(curCandy));
-    
-    if(candyNumber - int(curCandy) > allowedTake)
-      {
 
-       //if(curTime < waitTime)
-       Serial.println("GAS");
-       allowedTake += 2;
-       //Serial.println(curCandy);
-       //Serial.println(candyNumber - int(curCandy));
-       //Serial.println("GAS2FAST");
-       //Serial.println(waitTime);
-       Serial.println(allowedTake);
-      }
-     
       
   }  
 
 void getWeight() 
   {
     currentWeight = scale.get_units();
+    Serial.println(int(curCandy));
     if(weigh < 1)
       {
       Serial.println("wrk");
@@ -105,16 +113,22 @@ void getWeight()
       startWeight = scale.get_units();
       calcWeight = startWeight;
       singularWeight = scale.get_units() / candyNumber;
-      Serial.println(singularWeight);
-      Serial.println(startWeight);
+      //Serial.println(singularWeight);
+      //Serial.println(startWeight);
       Serial.println(currentWeight);
       weigh++;
       }
 
-      if(currentWeight / candyNumber > singularWeight)
-      {
-        //Serial.println("putback");
-        //calcWeight = startWeight;
-        //rWeight = scale.get_units() / candyNumber;
-        }
+  }
+
+void fireball()
+{
+   digitalWrite(gasrelaypin, HIGH); // sets the digital pin 13 on
+  delay(1000);
+  digitalWrite(lightrelaypin, HIGH); // sets the digital pin 13 on
+  delay(900);            // waits for a second
+   digitalWrite(gasrelaypin, LOW); // sets the digital pin 13 on
+  digitalWrite(lightrelaypin, LOW); // sets the digital pin 13 on  
+  delay(1000);
+  candyNumber = curCandy;
   }
